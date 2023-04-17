@@ -6,7 +6,7 @@ module.exports = {
 
   run: async (client, message, args) => {
     let embed = new Discord.EmbedBuilder()
-      .setColor("Random")
+      .setColor("Purple")
       .setAuthor({
         name: client.user.username,
         iconURL: client.user.displayAvatarURL(),
