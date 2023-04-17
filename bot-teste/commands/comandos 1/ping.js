@@ -16,7 +16,7 @@ module.exports = {
       );
 
     let embed2 = new Discord.EmbedBuilder()
-      .setColor("Random")
+      .setColor("Purple")
       .setAuthor({
         name: client.user.username,
         iconURL: client.user.displayAvatarURL(),
