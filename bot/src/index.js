@@ -11,13 +11,17 @@ const client = new Client({
 });
 
 
-client.on('messageCreate', (message) => {
-    if (message.author.bot) {
-        return;
+client.on('interactionCreate', (interaction2) => {
+    if (interaction2.commandName === "hey") {
+        interaction2.reply("Tu é Gay?🏳️‍🌈");
     }
+})
 
-    if (message.content === 'hello') {
-        message.reply('hello');
+client.on('interactionCreate', (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "ping") {
+        interaction.reply(`Ping is ${client.ws.ping}`);
     }
 });
 
