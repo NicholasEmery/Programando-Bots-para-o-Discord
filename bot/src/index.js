@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import { Client, REST, Routes, GatewayIntentBits, Collection } from "discord.js"; // Import Collection from discord.js
+import { Client, REST, Routes, Events, GatewayIntentBits, Collection } from "discord.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname } from 'path';
 
 // Carregar variáveis de ambiente
@@ -24,25 +24,34 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 
 client.commands = new Collection();
 
-const commandFiles = fs.readdirSync(path.join(__dirname, './commands')).filter(file => file.endsWith('.js'));
+client.on("ready", async () => {
+  console.log(`Logado na conta ${client.user.tag}!`);
+});
 
-// Função para registrar todos os comandos com o bot
-async function registerCommands() {
-  for (const file of commandFiles) {
-      const command = await import(`./commands/${file}`);
-      client.commands.set(command.default.data.name, command.default);
-  }
-}
+client.login(token)
 
-const rest = new REST({ version: '10' }).setToken(token);
+// Carregar comandos do Bot
+const commands = [];
+const commandsDirectory = path.join(__dirname, "./commands");
 
-// Função para registrar os comandos no Discord
-async function registerCommandsOnDiscord() {
-  const commands = [];
-  for (const command of client.commands.values()) {
+const commandFiles = fs.readdirSync(commandsDirectory).filter(file => file.endsWith('.js'));
+
+await Promise.all(commandFiles.map(async file => {
+  const filePath = path.join(commandsDirectory, file);
+  const moduleURL = pathToFileURL(filePath);
+  const { default: command } = await import(moduleURL);
+  if ('data' in command && 'execute' in command) {
+    client.commands.set(command.data.name, command);
     commands.push(command.data.toJSON());
+  } else {
+    console.log(`[ATENÇÃO] O comando em ${filePath} está faltando uma propriedade "data" ou "execute" necessária.`);
   }
+}));
 
+const rest = new REST().setToken(token);
+
+// Registrando comandos
+(async () => {
   try {
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
@@ -57,21 +66,30 @@ async function registerCommandsOnDiscord() {
     // And of course, make sure you catch and log any errors!
     console.error(error);
   }
-}
+})();
 
-const startBot = async () => {
-  try {
-    await client.login(token);
-    console.log("Bot iniciado com sucesso!");
-    client.on("ready", () => {
-        client.user.setActivity("Bot online", { type: 'LISTENING' }); 
-    });
-    await registerCommands(); // Primeiro registre os comandos localmente
-    await registerCommandsOnDiscord(); // Depois registre os comandos no Discord
-  } catch (error) {
-    console.error(`Erro ao iniciar o bot: ${error.message}`);
-  }
-};
-startBot();
+client.on(Events.InteractionCreate, interaction => {
+	if (!interaction.isChatInputCommand()) return;
+});
 
-export default startBot;
+client.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isChatInputCommand()) return;
+
+	const command = interaction.client.commands.get(interaction.commandName);
+
+	if (!command) {
+		console.error(`Nenhum comando correspondente a ${interaction.commandName} foi encontrado.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({ content: 'Ocorreu um erro ao executar este comando!', ephemeral: true });
+		} else {
+			await interaction.reply({ content: 'Ocorreu um erro ao executar este comando!', ephemeral: true });
+		}
+	}
+});
