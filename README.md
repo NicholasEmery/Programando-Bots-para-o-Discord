@@ -1,9 +1,3 @@
----
-runme:
-  id: 01HV1DEZ68MQP8KPHQD51EN8GN
-  version: v3
----
-
 <div align="center">
  <a href="https://www.postgresql.org" target="_blank"><img src="https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white"/></a>
  <a href="https://www.nodejs.org" target="_blank"><img src="https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white"/></a>
